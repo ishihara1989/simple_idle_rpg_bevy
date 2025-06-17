@@ -1,0 +1,8 @@
+[package]
+name = "simple_idle_rpg"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.16.1"
+too_big_float = { git = "https://github.com/ishihara1989/too_big_float.git" }
