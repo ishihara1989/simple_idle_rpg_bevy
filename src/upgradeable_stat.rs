@@ -103,7 +103,7 @@ pub fn calculate_exponential_growth(
 
 // 新しいアップグレードシステム - 個別コンポーネント設計
 pub fn upgradeable_stat_upgrade_system(
-    mut player_query: Query<&mut crate::Player>,
+    mut player_experience_query: Query<&mut crate::components::Experience, With<crate::components::Player>>,
     mut upgradeable_stats: Query<(
         &UpgradeableStat,
         &mut CurrentValue,
@@ -114,16 +114,16 @@ pub fn upgradeable_stat_upgrade_system(
         &CostMultiplier,
     )>,
 ) {
-    let Ok(mut player) = player_query.single_mut() else { return };
+    let Ok(mut player_exp) = player_experience_query.single_mut() else { return };
     
     let mut upgraded = true;
     while upgraded {
         upgraded = false;
         
         for (stat, mut current_value, base_value, mut level, mut upgrade_cost, upgrade_multiplier, cost_multiplier) in upgradeable_stats.iter_mut() {
-            if can_upgrade(&player.exp, &upgrade_cost) {
+            if can_upgrade(&player_exp.0, &upgrade_cost) {
                 let cost = upgrade_cost.0.clone();
-                player.exp = player.exp.clone() - cost;
+                player_exp.0 = player_exp.0.clone() - cost.clone();
                 
                 // レベルアップ
                 level.0 += 1;
@@ -135,8 +135,8 @@ pub fn upgradeable_stat_upgrade_system(
                 upgrade_cost.0 = upgrade_cost.0.clone() * BigFloat::from(cost_multiplier.0);
                 
                 upgraded = true;
-                println!("{} upgraded! New level: {}, New value: {}", 
-                    stat.name, level.0, current_value.0);
+                println!("DEBUG UPGRADE: {} upgraded! New level: {}, New value: {}, Cost was: {}", 
+                    stat.name, level.0, current_value.0, cost);
             }
         }
     }
