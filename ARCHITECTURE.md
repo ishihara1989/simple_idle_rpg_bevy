@@ -20,8 +20,17 @@ src/
 │   └── combat_end.rs      # 戦闘終了システム
 ├── events/              # イベント定義
 │   └── combat_events.rs   # 戦闘関連イベント
+├── plugins/             # プラグインシステム ✅ 新規追加 (2025-06-19)
+│   ├── combat.rs          # 戦闘関連プラグイン
+│   ├── stats.rs           # ステータス管理プラグイン
+│   ├── ui.rs              # UI管理プラグイン
+│   └── player.rs          # プレイヤー管理プラグイン
+├── ui/                  # UI専用モジュール
+│   ├── setup.rs           # UI初期化
+│   ├── combat_ui.rs       # 戦闘UI更新
+│   └── tab_ui.rs          # タブシステム
 ├── upgradeable_stat.rs  # アップグレード可能ステータスシステム
-└── main.rs             # メインアプリケーション + UI
+└── main.rs             # メインアプリケーション（プラグイン登録のみ）
 ```
 
 ### 1.3 ECSコンポーネント設計
@@ -104,9 +113,9 @@ src/
 ### 2.3 設計上の課題
 
 #### アーキテクチャレベル
-- **UI処理の混在**: main.rsに200行以上のUI処理が混在
+- ~~**UI処理の混在**: main.rsに200行以上のUI処理が混在~~ ✅ **解決済み** (UIPlugin分離完了)
 - ~~**文字列ベース処理**: `sync_stats_system`でのstat名の文字列比較~~ ✅ **解決済み**
-- **グローバル状態**: `GameState`リソースによる状態管理
+- ~~**大規模な初期化**: main.rsの複雑な初期化処理~~ ✅ **解決済み** (プラグインシステム導入)
 
 #### コンポーネント設計
 - **重複するLevel**: `management_stats::Level`と`upgradeable_stat::Level`
@@ -162,15 +171,17 @@ pub use upgradeable_stat::Level as UpgradeLevel;
 pub use management_stats::Level as PlayerLevel;
 ```
 
-### 3.3 UIシステム分離【優先度: 中】
+### ~~3.3 UIシステム分離【優先度: 中】~~ ✅ **完了** (2025-06-19)
 
-#### UI専用モジュール作成
+#### ~~UI専用モジュール作成~~ ✅ **実装完了**
 ```rust
-src/ui/
+// ✅ 実装済み: UI専用プラグインシステム
+src/plugins/ui.rs        // UIプラグイン (setup_ui, update_ui_system, tab_button_system)
+src/ui/                  // UI専用モジュール
 ├── mod.rs
-├── setup.rs     // UI初期化
-├── combat_ui.rs // 戦闘UI更新
-└── tab_ui.rs    // タブシステム
+├── setup.rs             // UI初期化
+├── combat_ui.rs         // 戦闘UI更新
+└── tab_ui.rs            // タブシステム
 ```
 
 ### 3.4 イベント駆動アーキテクチャ強化【優先度: 中】
@@ -269,6 +280,81 @@ mod tests {
 - **エラーハンドリング**: `unwrap()`の使用を避け、適切なエラー処理
 
 ## 5. 完了したリファクタリング
+
+### 5.0 プラグインシステム導入 (2025-06-19)
+
+#### 🎯 **解決した問題**
+- **main.rsの巨大化**: 55行の初期化処理 → 13行のプラグイン登録のみ
+- **関心の分離**: 複数責任の混在 → 4つの専用プラグインに分離
+- **保守性の向上**: システム追加時の影響範囲を最小化
+- **可読性の向上**: 各プラグインが単一の関心事に集中
+
+#### 🏗️ **実装したアーキテクチャ**
+
+**プラグインシステム構造**:
+```rust
+// src/plugins/mod.rs - プラグイン統合管理
+pub use combat::CombatPlugin;     // 戦闘システム統合
+pub use stats::StatsPlugin;       // ステータス管理統合
+pub use ui::UIPlugin;             // UI管理統合  
+pub use player::PlayerPlugin;     // プレイヤー管理統合
+```
+
+**各プラグインの責任分離**:
+```rust
+// PlayerPlugin: ゲーム状態とプレイヤー初期化
+.insert_resource(GameState { ... })
+.add_systems(Startup, player_init_system)
+
+// CombatPlugin: 戦闘イベントと戦闘システム
+.add_event::<AttackEvent>() + 6つの戦闘イベント
+.add_systems(Update, (combat_init_system, attack_systems, death_systems, ...))
+
+// StatsPlugin: アップグレード・同期システム  
+.add_systems(Update, (upgradeable_stat_upgrade_system, hp_sync_system, ...))
+
+// UIPlugin: UI初期化・更新システム
+.add_systems(Startup, setup_ui)
+.add_systems(Update, (update_ui_system, tab_button_system))
+```
+
+**簡潔になったmain.rs**:
+```rust
+// Before: 55行の複雑な初期化
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .insert_resource(GameState { ... })
+        .add_event::<AttackEvent>()
+        // ... 50行以上の初期化処理
+        .run();
+}
+
+// After: 13行のプラグイン登録のみ
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            PlayerPlugin,
+            CombatPlugin,
+            StatsPlugin,
+            UIPlugin,
+        ))
+        .run();
+}
+```
+
+#### ✅ **結果と検証**
+- **コンパイル成功**: デバッグ・リリースビルド共に成功
+- **機能リグレッションなし**: 全システムが正常動作
+- **関心の分離**: 各プラグインが明確な責任を持つ
+- **拡張性向上**: 新機能はプラグインとして独立追加可能
+
+#### 🔧 **技術的詳細**
+- **Before**: main.rs 55行（イベント7個 + システム15個 + リソース1個）
+- **After**: main.rs 13行 + 4つの専用プラグイン
+- **保守性**: 新システム追加時は該当プラグインのみ編集
+- **テスタビリティ**: 各プラグインを独立してテスト可能
 
 ### 5.1 real_time_attack_system リファクタリング (2025-06-19)
 
@@ -372,17 +458,21 @@ UpgradeableAttackBundle::new(base_value, cost, multiplier, cost_multiplier)
 ### 改善が必要な点
 - ~~**システムの巨大化**: 複数責任を持つシステムの分割~~ ✅ **完了** (sync_stats_system + real_time_attack_system)
 - ~~**型安全性**: 文字列ベース処理の型安全な実装への移行~~ ✅ **完了**
-- **UI分離**: メインロジックからのUI処理分離
+- ~~**UI分離**: メインロジックからのUI処理分離~~ ✅ **完了** (UIPlugin分離)
+- ~~**main.rsの巨大化**: 初期化処理の分離~~ ✅ **完了** (プラグインシステム導入)
 
 ### 次期開発での重点事項
 1. ~~**システム分割**: 50行超えシステムの細分化~~ ✅ **完了** (sync_stats_system + real_time_attack_system)
 2. ~~**型安全性向上**: コンパイル時の型チェック強化~~ ✅ **sync_stats_system完了**
-3. **テスト整備**: 個別システムの単体テスト作成
-4. **ドキュメント整備**: システム間の依存関係の文書化
+3. ~~**プラグインシステム導入**: 関心の分離とmain.rs簡略化~~ ✅ **完了** (4つのプラグインに分離)
+4. **テスト整備**: 個別システムの単体テスト作成
+5. **ドキュメント整備**: システム間の依存関係の文書化
 
 ### 残りの重要タスク
 1. ~~**real_time_attack_system 分割**~~ ✅ **完了** (55行 → プレイヤー/敵攻撃システム分離)
-2. **UI分離** (main.rsからUI処理を独立モジュールに移行)
-3. **テスト拡充** (特に新しく分離したシステムの単体テスト)
+2. ~~**UI分離**~~ ✅ **完了** (UIPlugin + UI専用モジュール分離)
+3. ~~**プラグインシステム導入**~~ ✅ **完了** (main.rs 55行 → 13行に削減)
+4. **テスト拡充** (特に新しく分離したシステムの単体テスト)
+5. **Level コンポーネント統一** (management_stats::Level と upgradeable_stat::Level の重複解消)
 
 このアーキテクチャドキュメントは、コードベースの成長と共に定期的に更新し、ECS設計原則との整合性を維持することを推奨します。
