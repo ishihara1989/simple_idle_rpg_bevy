@@ -10,7 +10,6 @@ fn main() {
             current_tab: GameTab::Combat,
         })
         // Add event types
-        .add_event::<TurnStartEvent>()
         .add_event::<AttackEvent>()
         .add_event::<DeathEvent>()
         .add_event::<PlayerDeathEvent>()
@@ -28,9 +27,9 @@ fn main() {
             // Initialization (only runs when needed)
             combat_init_system,
             
-            // Combat core systems (ordered)
-            turn_order_system,
-            (player_attack_system, enemy_attack_system),
+            // Real-time combat systems
+            attack_cooldown_system,
+            real_time_attack_system,
             damage_application_system,
             
             // Combat end systems

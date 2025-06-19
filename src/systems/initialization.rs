@@ -44,6 +44,7 @@ pub fn combat_init_system(
             CombatAttack(base_attack.0.clone()),
             CombatDefense(base_defense.0.clone()),
             CombatSpeed(base_speed.0.clone()),
+            AttackCooldown(0.0), // Start ready to attack
         ));
 
         // Spawn initial enemy
@@ -73,6 +74,7 @@ pub fn spawn_enemy(commands: &mut Commands, enemy_number: u32) {
         CombatSpeed(base_speed),
         ExpReward(base_exp),
         EnemyNumber(enemy_number),
+        AttackCooldown(0.0), // Start ready to attack
     ));
 }
 

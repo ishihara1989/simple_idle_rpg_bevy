@@ -23,6 +23,10 @@ pub struct CombatTimer {
     pub timer: Timer,
 }
 
+// Attack cooldown in milliseconds
+#[derive(Component, Clone, Debug, PartialEq)]
+pub struct AttackCooldown(pub f32);
+
 #[derive(Component, Clone, Debug, PartialEq)]
 pub struct ExpReward(pub BigFloat);
 

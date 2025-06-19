@@ -3,47 +3,46 @@ use too_big_float::BigFloat;
 use crate::components::*;
 use crate::events::*;
 
-// Determine turn order based on speed
-pub fn turn_order_system(
+// Real-time cooldown system - reduces cooldowns based on speed and time
+pub fn attack_cooldown_system(
     time: Res<Time>,
-    mut timer_query: Query<&mut CombatTimer>,
-    player_query: Query<&CombatSpeed, (With<Player>, Without<Enemy>)>,
-    enemy_query: Query<&CombatSpeed, (With<Enemy>, Without<Player>)>,
-    mut turn_events: EventWriter<TurnStartEvent>,
+    mut cooldown_query: Query<(&mut AttackCooldown, &CombatSpeed)>,
     game_state: Res<GameState>,
 ) {
     if game_state.is_game_over {
         return;
     }
 
-    let Ok(mut timer) = timer_query.get_single_mut() else { return };
-    let Ok(player_speed) = player_query.get_single() else { return };
-    let Ok(enemy_speed) = enemy_query.get_single() else { return };
-
-    if timer.timer.tick(time.delta()).just_finished() {
-        let player_speed_val = player_speed.0.to_f64().unwrap_or(1.0);
-        let enemy_speed_val = enemy_speed.0.to_f64().unwrap_or(1.0);
-        
-        if player_speed_val >= enemy_speed_val {
-            turn_events.send(TurnStartEvent { attacker: TurnAttacker::Player });
-        } else {
-            turn_events.send(TurnStartEvent { attacker: TurnAttacker::Enemy });
+    let delta_ms = time.delta().as_millis() as f32;
+    
+    for (mut cooldown, speed) in cooldown_query.iter_mut() {
+        if cooldown.0 > 0.0 {
+            // Cooldown reduction is proportional to speed
+            // Higher speed = faster cooldown reduction
+            let speed_multiplier = speed.0.to_f64().unwrap_or(1.0) as f32;
+            let reduction = delta_ms * speed_multiplier;
+            cooldown.0 = (cooldown.0 - reduction).max(0.0);
         }
     }
 }
 
-// Handle player attacks
-pub fn player_attack_system(
-    mut turn_events: EventReader<TurnStartEvent>,
+// Check for ready attackers and trigger attacks
+pub fn real_time_attack_system(
     mut attack_events: EventWriter<AttackEvent>,
-    player_query: Query<(Entity, &CombatAttack), With<Player>>,
-    enemy_query: Query<(Entity, &CombatDefense), With<Enemy>>,
+    mut player_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Player>, Without<Enemy>)>,
+    mut enemy_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Enemy>, Without<Player>)>,
+    player_target_query: Query<(Entity, &CombatDefense), (With<Enemy>, Without<Player>)>,
+    enemy_target_query: Query<(Entity, &CombatDefense), (With<Player>, Without<Enemy>)>,
+    game_state: Res<GameState>,
 ) {
-    for event in turn_events.read() {
-        if event.attacker == TurnAttacker::Player {
-            if let (Ok((player_entity, player_attack)), Ok((enemy_entity, enemy_defense))) = 
-                (player_query.get_single(), enemy_query.get_single()) {
-                    
+    if game_state.is_game_over {
+        return;
+    }
+
+    // Check player attack
+    if let Ok((player_entity, player_attack, player_speed, mut player_cooldown)) = player_query.get_single_mut() {
+        if player_cooldown.0 <= 0.0 {
+            if let Ok((enemy_entity, enemy_defense)) = player_target_query.get_single() {
                 let damage = (player_attack.0.clone() - enemy_defense.0.clone()).max(BigFloat::from(1.0));
                 
                 attack_events.send(AttackEvent {
@@ -52,24 +51,20 @@ pub fn player_attack_system(
                     damage: damage.clone(),
                 });
                 
-                println!("Player attacks for {} damage", damage);
+                // Calculate base attack time (1000ms) adjusted by speed
+                let speed_value = player_speed.0.to_f64().unwrap_or(1.0) as f32;
+                let base_attack_time = 1000.0; // 1 second base
+                player_cooldown.0 = base_attack_time / speed_value;
+                
+                println!("Player attacks for {} damage (cooldown: {}ms)", damage, player_cooldown.0);
             }
         }
     }
-}
 
-// Handle enemy attacks
-pub fn enemy_attack_system(
-    mut turn_events: EventReader<TurnStartEvent>,
-    mut attack_events: EventWriter<AttackEvent>,
-    player_query: Query<(Entity, &CombatDefense), With<Player>>,
-    enemy_query: Query<(Entity, &CombatAttack), With<Enemy>>,
-) {
-    for event in turn_events.read() {
-        if event.attacker == TurnAttacker::Enemy {
-            if let (Ok((player_entity, player_defense)), Ok((enemy_entity, enemy_attack))) = 
-                (player_query.get_single(), enemy_query.get_single()) {
-                    
+    // Check enemy attack
+    if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.get_single_mut() {
+        if enemy_cooldown.0 <= 0.0 {
+            if let Ok((player_entity, player_defense)) = enemy_target_query.get_single() {
                 let damage = (enemy_attack.0.clone() - player_defense.0.clone()).max(BigFloat::from(1.0));
                 
                 attack_events.send(AttackEvent {
@@ -78,13 +73,18 @@ pub fn enemy_attack_system(
                     damage: damage.clone(),
                 });
                 
-                println!("Enemy attacks for {} damage", damage);
+                // Calculate base attack time adjusted by speed
+                let speed_value = enemy_speed.0.to_f64().unwrap_or(1.0) as f32;
+                let base_attack_time = 1000.0; // 1 second base
+                enemy_cooldown.0 = base_attack_time / speed_value;
+                
+                println!("Enemy attacks for {} damage (cooldown: {}ms)", damage, enemy_cooldown.0);
             }
         }
     }
 }
 
-// Apply damage to targets
+// Apply damage to targets (unchanged from turn-based system)
 pub fn damage_application_system(
     mut attack_events: EventReader<AttackEvent>,
     mut hp_query: Query<&mut CurrentHp>,
@@ -116,5 +116,3 @@ pub fn damage_application_system(
         }
     }
 }
-
-// Events are now defined in crate::events::combat_events
