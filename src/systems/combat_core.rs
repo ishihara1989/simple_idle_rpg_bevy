@@ -40,12 +40,12 @@ pub fn real_time_attack_system(
     }
 
     // Check player attack
-    if let Ok((player_entity, player_attack, player_speed, mut player_cooldown)) = player_query.get_single_mut() {
+    if let Ok((player_entity, player_attack, player_speed, mut player_cooldown)) = player_query.single_mut() {
         if player_cooldown.0 <= 0.0 {
-            if let Ok((enemy_entity, enemy_defense)) = player_target_query.get_single() {
+            if let Ok((enemy_entity, enemy_defense)) = player_target_query.single() {
                 let damage = (player_attack.0.clone() - enemy_defense.0.clone()).max(BigFloat::from(1.0));
                 
-                attack_events.send(AttackEvent {
+                attack_events.write(AttackEvent {
                     attacker: player_entity,
                     target: enemy_entity,
                     damage: damage.clone(),
@@ -62,12 +62,12 @@ pub fn real_time_attack_system(
     }
 
     // Check enemy attack
-    if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.get_single_mut() {
+    if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.single_mut() {
         if enemy_cooldown.0 <= 0.0 {
-            if let Ok((player_entity, player_defense)) = enemy_target_query.get_single() {
+            if let Ok((player_entity, player_defense)) = enemy_target_query.single() {
                 let damage = (enemy_attack.0.clone() - player_defense.0.clone()).max(BigFloat::from(1.0));
                 
-                attack_events.send(AttackEvent {
+                attack_events.write(AttackEvent {
                     attacker: enemy_entity,
                     target: player_entity,
                     damage: damage.clone(),
@@ -102,12 +102,12 @@ pub fn damage_application_system(
             // Check for death
             if current_hp.0 <= BigFloat::from(0.0) {
                 if player_query.get(attack.target).is_ok() {
-                    death_events.send(DeathEvent {
+                    death_events.write(DeathEvent {
                         entity: attack.target,
                         entity_type: DeathEntityType::Player,
                     });
                 } else if enemy_query.get(attack.target).is_ok() {
-                    death_events.send(DeathEvent {
+                    death_events.write(DeathEvent {
                         entity: attack.target,
                         entity_type: DeathEntityType::Enemy,
                     });

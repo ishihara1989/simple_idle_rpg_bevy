@@ -14,13 +14,13 @@ pub fn death_detection_system(
     for death in death_events.read() {
         match death.entity_type {
             DeathEntityType::Player => {
-                player_death_events.send(PlayerDeathEvent {
+                player_death_events.write(PlayerDeathEvent {
                     player_entity: death.entity,
                 });
             }
             DeathEntityType::Enemy => {
                 if let Ok((enemy_number, exp_reward)) = enemy_query.get(death.entity) {
-                    enemy_death_events.send(EnemyDeathEvent {
+                    enemy_death_events.write(EnemyDeathEvent {
                         enemy_entity: death.entity,
                         enemy_number: enemy_number.0,
                         exp_reward: exp_reward.0.clone(),
@@ -43,12 +43,12 @@ pub fn enemy_death_system(
         commands.entity(death.enemy_entity).despawn();
         
         // Award experience
-        exp_events.send(ExpGainEvent {
+        exp_events.write(ExpGainEvent {
             amount: death.exp_reward.clone(),
         });
         
         // Spawn next enemy
-        next_enemy_events.send(NextEnemySpawnEvent {
+        next_enemy_events.write(NextEnemySpawnEvent {
             enemy_number: death.enemy_number + 1,
         });
         
@@ -94,7 +94,7 @@ pub fn exp_gain_system(
     mut player_query: Query<&mut Experience, With<Player>>,
 ) {
     for exp in exp_events.read() {
-        if let Ok(mut player_exp) = player_query.get_single_mut() {
+        if let Ok(mut player_exp) = player_query.single_mut() {
             player_exp.0 += exp.amount.clone();
             println!("Gained {} EXP! Total: {}", exp.amount, player_exp.0);
         }

@@ -202,8 +202,8 @@ fn update_ui_system(
     mut combat_text_query: Query<&mut Text, (With<CombatText>, Without<StatsText>)>,
 ) {
     // Update player stats display
-    if let Ok((exp, hp, attack, defense, speed)) = player_query.get_single() {
-        if let Ok(mut stats_text) = stats_text_query.get_single_mut() {
+    if let Ok((exp, hp, attack, defense, speed)) = player_query.single() {
+        if let Ok(mut stats_text) = stats_text_query.single_mut() {
             let stats_info = format!(
                 "Player Stats:\nHP: {:.2}\nAttack: {:.2}\nDefense: {:.2}\nSpeed: {:.2}\nEXP: {:.2}",
                 hp.0.to_f64().unwrap_or(0.0),
@@ -217,8 +217,8 @@ fn update_ui_system(
     }
 
     // Update enemy stats display
-    if let Ok((enemy_number, hp, attack, defense, speed, exp_reward)) = enemy_query.get_single() {
-        if let Ok(mut combat_text) = combat_text_query.get_single_mut() {
+    if let Ok((enemy_number, hp, attack, defense, speed, exp_reward)) = enemy_query.single() {
+        if let Ok(mut combat_text) = combat_text_query.single_mut() {
             let combat_info = format!(
                 "Enemy #{}\nEnemy HP: {:.2}\nEnemy Attack: {:.2}\nEnemy Defense: {:.2}\nEnemy Speed: {:.2}\nEXP Reward: {:.2}",
                 enemy_number.0,

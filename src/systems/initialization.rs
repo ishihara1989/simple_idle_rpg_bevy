@@ -36,7 +36,7 @@ pub fn combat_init_system(
     player_query: Query<(Entity, &BaseHp, &BaseAttack, &BaseDefense, &BaseSpeed), (With<Player>, Without<CurrentHp>)>,
     game_state: Res<GameState>,
 ) {
-    if let Ok((player_entity, base_hp, base_attack, base_defense, base_speed)) = player_query.get_single() {
+    if let Ok((player_entity, base_hp, base_attack, base_defense, base_speed)) = player_query.single() {
         // Add combat stats to player entity
         commands.entity(player_entity).insert((
             CurrentHp(base_hp.0.clone()),
