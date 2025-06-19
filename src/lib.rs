@@ -2,6 +2,7 @@ pub mod components;
 pub mod systems;
 pub mod events;
 pub mod upgradeable_stat;
+pub mod ui;
 
 #[cfg(test)]
 pub mod tests {
@@ -14,6 +15,7 @@ pub mod tests {
 pub use components::*;
 pub use systems::*;
 pub use events::*;
+pub use ui::*;
 // Rename upgradeable_stat Level to avoid conflict
 pub use upgradeable_stat::{
     CurrentValue, UpgradeCost, UpgradeMultiplier, CostMultiplier, BaseValue,
