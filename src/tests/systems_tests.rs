@@ -13,16 +13,16 @@ mod tests {
         let base_value = BigFloat::from(20.0);
         let multiplier = 1.5;
         
-        let level_1 = calculate_exponential_growth(base_value.clone(), multiplier, 1);
-        let level_5 = calculate_exponential_growth(base_value.clone(), multiplier, 5);
-        let level_10 = calculate_exponential_growth(base_value.clone(), multiplier, 10);
+        let level_1 = calculate_exponential_growth(base_value, multiplier, 1);
+        let level_5 = calculate_exponential_growth(base_value, multiplier, 5);
+        let level_10 = calculate_exponential_growth(base_value, multiplier, 10);
         
         // Higher levels should have higher values
         assert!(level_5 > level_1);
         assert!(level_10 > level_5);
         
         // Check specific calculation for level 1
-        let expected_level_1 = base_value.clone() * BigFloat::from(1.5);
+        let expected_level_1 = base_value * BigFloat::from(1.5);
         assert_eq!(level_1, expected_level_1);
     }
     

@@ -43,12 +43,12 @@ pub fn real_time_attack_system(
     if let Ok((player_entity, player_attack, player_speed, mut player_cooldown)) = player_query.single_mut() {
         if player_cooldown.0 <= 0.0 {
             if let Ok((enemy_entity, enemy_defense)) = player_target_query.single() {
-                let damage = (player_attack.0.clone() - enemy_defense.0.clone()).max(BigFloat::from(1.0));
+                let damage = (player_attack.0 - enemy_defense.0).max(BigFloat::from(1.0));
                 
                 attack_events.write(AttackEvent {
                     attacker: player_entity,
                     target: enemy_entity,
-                    damage: damage.clone(),
+                    damage,
                 });
                 
                 // Calculate base attack time (1000ms) adjusted by speed
@@ -65,12 +65,12 @@ pub fn real_time_attack_system(
     if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.single_mut() {
         if enemy_cooldown.0 <= 0.0 {
             if let Ok((player_entity, player_defense)) = enemy_target_query.single() {
-                let damage = (enemy_attack.0.clone() - player_defense.0.clone()).max(BigFloat::from(1.0));
+                let damage = (enemy_attack.0 - player_defense.0).max(BigFloat::from(1.0));
                 
                 attack_events.write(AttackEvent {
                     attacker: enemy_entity,
                     target: player_entity,
-                    damage: damage.clone(),
+                    damage,
                 });
                 
                 // Calculate base attack time adjusted by speed
@@ -94,8 +94,8 @@ pub fn damage_application_system(
 ) {
     for attack in attack_events.read() {
         if let Ok(mut current_hp) = hp_query.get_mut(attack.target) {
-            let old_hp = current_hp.0.clone();
-            current_hp.0 = (current_hp.0.clone() - attack.damage.clone()).max(BigFloat::from(0.0));
+            let old_hp = current_hp.0;
+            current_hp.0 = (current_hp.0 - attack.damage).max(BigFloat::from(0.0));
             
             println!("Target HP: {} -> {}", old_hp, current_hp.0);
             

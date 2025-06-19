@@ -77,16 +77,16 @@ mod tests {
         let base_hp = BigFloat::from(20.0);
         let multiplier = 1.5;
         
-        let enemy_1_hp = calculate_exponential_growth(base_hp.clone(), multiplier, 1);
-        let enemy_3_hp = calculate_exponential_growth(base_hp.clone(), multiplier, 3);
-        let enemy_5_hp = calculate_exponential_growth(base_hp.clone(), multiplier, 5);
+        let enemy_1_hp = calculate_exponential_growth(base_hp, multiplier, 1);
+        let enemy_3_hp = calculate_exponential_growth(base_hp, multiplier, 3);
+        let enemy_5_hp = calculate_exponential_growth(base_hp, multiplier, 5);
         
         // Higher level enemies should have more HP
         assert!(enemy_3_hp > enemy_1_hp);
         assert!(enemy_5_hp > enemy_3_hp);
         
         // Check actual values for enemy 1 (base_hp * multiplier^1)
-        let expected_enemy_1_hp = base_hp.clone() * BigFloat::from(1.5);
+        let expected_enemy_1_hp = base_hp * BigFloat::from(1.5);
         assert_eq!(enemy_1_hp, expected_enemy_1_hp);
     }
     

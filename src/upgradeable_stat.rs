@@ -56,7 +56,7 @@ impl UpgradeableStatBundle {
     ) -> Self {
         Self {
             upgradeable_stat: UpgradeableStat::new(name),
-            current_value: CurrentValue(base_value.clone()),
+            current_value: CurrentValue(base_value),
             base_value: BaseValue(base_value),
             level: Level(0),
             upgrade_cost: UpgradeCost(initial_cost),
@@ -80,7 +80,7 @@ pub fn recalculate_current_value(
     level: &Level,
     multiplier: &UpgradeMultiplier,
 ) -> BigFloat {
-    let mut result = base_value.0.clone();
+    let mut result = base_value.0;
     for _ in 0..level.0 {
         result = result * BigFloat::from(multiplier.0);
     }
@@ -96,7 +96,7 @@ pub fn calculate_exponential_growth(
     let multiplier_bf = BigFloat::from(multiplier);
     let mut result = base;
     for _ in 0..level {
-        result = result * multiplier_bf.clone();
+        result = result * multiplier_bf;
     }
     result
 }
@@ -122,8 +122,8 @@ pub fn upgradeable_stat_upgrade_system(
         
         for (stat, mut current_value, base_value, mut level, mut upgrade_cost, upgrade_multiplier, cost_multiplier) in upgradeable_stats.iter_mut() {
             if can_upgrade(&player_exp.0, &upgrade_cost) {
-                let cost = upgrade_cost.0.clone();
-                player_exp.0 = player_exp.0.clone() - cost.clone();
+                let cost = upgrade_cost.0;
+                player_exp.0 = player_exp.0 - cost;
                 
                 // レベルアップ
                 level.0 += 1;
@@ -132,7 +132,7 @@ pub fn upgradeable_stat_upgrade_system(
                 current_value.0 = recalculate_current_value(base_value, &level, upgrade_multiplier);
                 
                 // コスト更新
-                upgrade_cost.0 = upgrade_cost.0.clone() * BigFloat::from(cost_multiplier.0);
+                upgrade_cost.0 = upgrade_cost.0 * BigFloat::from(cost_multiplier.0);
                 
                 upgraded = true;
                 println!("DEBUG UPGRADE: {} upgraded! New level: {}, New value: {}, Cost was: {}", 

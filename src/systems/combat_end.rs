@@ -23,7 +23,7 @@ pub fn death_detection_system(
                     enemy_death_events.write(EnemyDeathEvent {
                         enemy_entity: death.entity,
                         enemy_number: enemy_number.0,
-                        exp_reward: exp_reward.0.clone(),
+                        exp_reward: exp_reward.0,
                     });
                 }
             }
@@ -44,7 +44,7 @@ pub fn enemy_death_system(
         
         // Award experience
         exp_events.write(ExpGainEvent {
-            amount: death.exp_reward.clone(),
+            amount: death.exp_reward,
         });
         
         // Spawn next enemy
@@ -95,7 +95,7 @@ pub fn exp_gain_system(
 ) {
     for exp in exp_events.read() {
         if let Ok(mut player_exp) = player_query.single_mut() {
-            player_exp.0 += exp.amount.clone();
+            player_exp.0 += exp.amount;
             println!("Gained {} EXP! Total: {}", exp.amount, player_exp.0);
         }
     }
@@ -132,24 +132,24 @@ pub fn sync_stats_system(
     if let Ok((mut combat_attack, mut combat_defense, mut combat_speed, mut max_hp, mut current_hp, _base_attack, _base_defense, _base_speed, _base_hp)) = player_query.single_mut() {
         
         for (stat, current_value) in stats.iter() {
-            let old_max_hp = max_hp.0.clone();
+            let old_max_hp = max_hp.0;
             
             match stat.name.as_str() {
                 "HP" => {
-                    max_hp.0 = current_value.0.clone();
+                    max_hp.0 = current_value.0;
                     // If max HP changed, update current HP
                     if max_hp.0 != old_max_hp {
-                        current_hp.0 = max_hp.0.clone();
+                        current_hp.0 = max_hp.0;
                     }
                 }
                 "Attack" => {
-                    combat_attack.0 = current_value.0.clone();
+                    combat_attack.0 = current_value.0;
                 }
                 "Defense" => {
-                    combat_defense.0 = current_value.0.clone();
+                    combat_defense.0 = current_value.0;
                 }
                 "Speed" => {
-                    combat_speed.0 = current_value.0.clone();
+                    combat_speed.0 = current_value.0;
                 }
                 _ => {} // Unknown stat name, ignore
             }
