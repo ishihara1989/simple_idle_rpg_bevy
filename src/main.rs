@@ -29,7 +29,7 @@ fn main() {
             
             // Real-time combat systems
             attack_cooldown_system,
-            real_time_attack_system,
+            (player_attack_system, enemy_attack_system),
             damage_application_system,
             
             // Combat end systems

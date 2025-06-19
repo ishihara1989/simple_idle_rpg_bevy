@@ -26,65 +26,93 @@ pub fn attack_cooldown_system(
     }
 }
 
-// Check for ready attackers and trigger attacks
-pub fn real_time_attack_system(
+// Shared helper function for attack execution logic
+fn execute_attack_if_ready(
+    attacker_entity: Entity,
+    attack: &CombatAttack,
+    speed: &CombatSpeed,
+    cooldown: &mut AttackCooldown,
+    target_entity: Entity,
+    target_defense: &CombatDefense,
+    attack_events: &mut EventWriter<AttackEvent>,
+    attacker_name: &str,
+) -> bool {
+    if cooldown.0 <= 0.0 {
+        let damage = (attack.0 - target_defense.0).max(BigFloat::from(1.0));
+        
+        attack_events.write(AttackEvent {
+            attacker: attacker_entity,
+            target: target_entity,
+            damage,
+        });
+        
+        // Calculate base attack time (1000ms) adjusted by speed
+        let speed_value = speed.0.to_f64().unwrap_or(1.0) as f32;
+        let base_attack_time = 1000.0; // 1 second base
+        cooldown.0 = base_attack_time / speed_value;
+        
+        println!("{} attacks for {} damage (cooldown: {}ms)", attacker_name, damage, cooldown.0);
+        true
+    } else {
+        false
+    }
+}
+
+// Player attack system - handles only player attacks
+pub fn player_attack_system(
     mut attack_events: EventWriter<AttackEvent>,
     mut player_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Player>, Without<Enemy>)>,
-    mut enemy_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Enemy>, Without<Player>)>,
-    player_target_query: Query<(Entity, &CombatDefense), (With<Enemy>, Without<Player>)>,
-    enemy_target_query: Query<(Entity, &CombatDefense), (With<Player>, Without<Enemy>)>,
+    target_query: Query<(Entity, &CombatDefense), (With<Enemy>, Without<Player>)>,
     game_state: Res<GameState>,
 ) {
     if game_state.is_game_over {
         return;
     }
 
-    // Check player attack
     if let Ok((player_entity, player_attack, player_speed, mut player_cooldown)) = player_query.single_mut() {
-        if player_cooldown.0 <= 0.0 {
-            if let Ok((enemy_entity, enemy_defense)) = player_target_query.single() {
-                let damage = (player_attack.0 - enemy_defense.0).max(BigFloat::from(1.0));
-                
-                attack_events.write(AttackEvent {
-                    attacker: player_entity,
-                    target: enemy_entity,
-                    damage,
-                });
-                
-                // Calculate base attack time (1000ms) adjusted by speed
-                let speed_value = player_speed.0.to_f64().unwrap_or(1.0) as f32;
-                let base_attack_time = 1000.0; // 1 second base
-                player_cooldown.0 = base_attack_time / speed_value;
-                
-                println!("Player attacks for {} damage (cooldown: {}ms)", damage, player_cooldown.0);
-            }
-        }
-    }
-
-    // Check enemy attack
-    if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.single_mut() {
-        if enemy_cooldown.0 <= 0.0 {
-            if let Ok((player_entity, player_defense)) = enemy_target_query.single() {
-                let damage = (enemy_attack.0 - player_defense.0).max(BigFloat::from(1.0));
-                
-                attack_events.write(AttackEvent {
-                    attacker: enemy_entity,
-                    target: player_entity,
-                    damage,
-                });
-                
-                // Calculate base attack time adjusted by speed
-                let speed_value = enemy_speed.0.to_f64().unwrap_or(1.0) as f32;
-                let base_attack_time = 1000.0; // 1 second base
-                enemy_cooldown.0 = base_attack_time / speed_value;
-                
-                println!("Enemy attacks for {} damage (cooldown: {}ms)", damage, enemy_cooldown.0);
-            }
+        if let Ok((enemy_entity, enemy_defense)) = target_query.single() {
+            execute_attack_if_ready(
+                player_entity,
+                player_attack,
+                player_speed,
+                &mut player_cooldown,
+                enemy_entity,
+                enemy_defense,
+                &mut attack_events,
+                "Player",
+            );
         }
     }
 }
 
-// Apply damage to targets (unchanged from turn-based system)
+// Enemy attack system - handles only enemy attacks
+pub fn enemy_attack_system(
+    mut attack_events: EventWriter<AttackEvent>,
+    mut enemy_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Enemy>, Without<Player>)>,
+    target_query: Query<(Entity, &CombatDefense), (With<Player>, Without<Enemy>)>,
+    game_state: Res<GameState>,
+) {
+    if game_state.is_game_over {
+        return;
+    }
+
+    if let Ok((enemy_entity, enemy_attack, enemy_speed, mut enemy_cooldown)) = enemy_query.single_mut() {
+        if let Ok((player_entity, player_defense)) = target_query.single() {
+            execute_attack_if_ready(
+                enemy_entity,
+                enemy_attack,
+                enemy_speed,
+                &mut enemy_cooldown,
+                player_entity,
+                player_defense,
+                &mut attack_events,
+                "Enemy",
+            );
+        }
+    }
+}
+
+// Apply damage to targets
 pub fn damage_application_system(
     mut attack_events: EventReader<AttackEvent>,
     mut hp_query: Query<&mut CurrentHp>,
