@@ -31,11 +31,12 @@ The game is organized into 4 main plugins, each handling a specific domain:
 ### Key Components Architecture
 
 **Combat vs Management Stats Separation:**
-- `combat_stats.rs` - Temporary battle stats (CurrentHp, CombatAttack, AttackCooldown)
-- `management_stats.rs` - Persistent progression stats (Experience, Level, BaseAttack)
+- `components/combat_stats.rs` - Temporary battle stats (CurrentHp, CombatAttack, AttackCooldown)
+- `components/management_stats.rs` - Persistent progression stats (Experience, Level, BaseAttack)
 
 **Upgradeable Stats System:**
-- `upgradeable_stat.rs` - Generic upgrade mechanics with exponential growth
+- `components/upgradeable_stats.rs` - Upgrade component definitions and bundles
+- `systems/upgrades.rs` - Upgrade logic and stat synchronization systems
 - Type-safe marker components: `UpgradeableHp`, `UpgradeableAttack`, `UpgradeableDefense`, `UpgradeableSpeed`
 - Individual sync systems for each stat type to maintain ECS single responsibility
 
@@ -70,4 +71,9 @@ Tests are organized by concern:
 - Main entry point is minimal (13 lines) - just plugin registration
 - All game logic is contained within the plugin system
 - UI is completely separated from game logic
-- Level components are disambiguated: `management_stats::Level` vs `upgradeable_stat::Level` (exported as `UpgradeLevel`)
+- Level components are disambiguated: `management_stats::Level` vs `upgradeable_stats::UpgradeLevel`
+- Upgrade system now properly separated: components in `/components/`, systems in `/systems/`
+
+## Development Guidelines
+
+- リファクタリングや新要素の追加、ファイルの追加などがあったときはドキュメントの更新が必要か確認する

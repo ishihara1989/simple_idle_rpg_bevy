@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use too_big_float::BigFloat;
 use crate::components::*;
-use crate::upgradeable_stat::{UpgradeableHpBundle, UpgradeableAttackBundle, UpgradeableDefenseBundle, UpgradeableSpeedBundle, calculate_exponential_growth};
+// All components are now imported via crate::components::*
 
 // Initialize player with base management stats
 pub fn player_init_system(mut commands: Commands) {

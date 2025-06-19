@@ -8,7 +8,7 @@ mod tests {
     #[test]
     fn test_exponential_growth_calculation() {
         // Test the underlying calculation logic used by spawn_enemy
-        use crate::upgradeable_stat::calculate_exponential_growth;
+        // calculate_exponential_growth is now available through crate::components::*
         
         let base_value = BigFloat::from(20.0);
         let multiplier = 1.5;

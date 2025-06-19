@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_enemy_scaling_logic() {
         // Test the exponential growth calculation used in enemy scaling
-        use crate::upgradeable_stat::calculate_exponential_growth;
+        use crate::components::calculate_exponential_growth;
         
         let base_hp = BigFloat::from(20.0);
         let multiplier = 1.5;

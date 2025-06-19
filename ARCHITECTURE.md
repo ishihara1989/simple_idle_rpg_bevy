@@ -13,11 +13,13 @@ src/
 ├── components/          # ECSコンポーネント定義
 │   ├── combat_stats.rs    # 戦闘用の一時的なステータス
 │   ├── management_stats.rs # 管理用の永続的なステータス
+│   ├── upgradeable_stats.rs # アップグレード可能ステータス（新配置）
 │   └── markers.rs         # マーカーコンポーネント
 ├── systems/             # ECSシステム実装
 │   ├── initialization.rs   # 初期化システム
 │   ├── combat_core.rs     # 戦闘コアシステム
-│   └── combat_end.rs      # 戦闘終了システム
+│   ├── combat_end.rs      # 戦闘終了システム
+│   └── upgrades.rs        # アップグレード・同期システム（新配置）
 ├── events/              # イベント定義
 │   └── combat_events.rs   # 戦闘関連イベント
 ├── plugins/             # プラグインシステム ✅ 新規追加 (2025-06-19)
@@ -29,7 +31,6 @@ src/
 │   ├── setup.rs           # UI初期化
 │   ├── combat_ui.rs       # 戦闘UI更新
 │   └── tab_ui.rs          # タブシステム
-├── upgradeable_stat.rs  # アップグレード可能ステータスシステム
 └── main.rs             # メインアプリケーション（プラグイン登録のみ）
 ```
 
@@ -50,10 +51,11 @@ src/
 - `StatsText`, `CombatText` - UI要素識別
 - `GameState` - ゲーム全体の状態管理（Resource）
 
-#### アップグレードシステム（upgradeable_stat.rs）
-- `CurrentValue`, `BaseValue`, `Level` - ステータス値管理
+#### アップグレードシステム（components/upgradeable_stats.rs）
+- `CurrentValue`, `BaseValue`, `UpgradeLevel` - ステータス値管理（Level → UpgradeLevel に名前変更）
 - `UpgradeCost`, `UpgradeMultiplier`, `CostMultiplier` - アップグレード計算
 - `UpgradeableStat` - アップグレード可能な統計の識別
+- 型安全マーカー: `UpgradeableHp`, `UpgradeableAttack`, `UpgradeableDefense`, `UpgradeableSpeed`
 
 ### 1.4 システムフロー
 
@@ -72,9 +74,13 @@ src/
 3. `exp_gain_system` - 経験値獲得
 4. `next_enemy_spawn_system` - 次の敵スポーン
 
-#### アップグレードフロー
+#### アップグレードフロー（systems/upgrades.rs）
 1. `upgradeable_stat_upgrade_system` - 経験値でステータス自動アップグレード
-2. `sync_stats_system` - アップグレード後の戦闘ステータス同期
+2. 個別同期システム - アップグレード後の戦闘ステータス同期
+   - `hp_sync_system` - HP同期専用
+   - `attack_sync_system` - 攻撃力同期専用  
+   - `defense_sync_system` - 防御力同期専用
+   - `speed_sync_system` - スピード同期専用
 
 ## 2. ECS設計違反とリファクタリング課題
 
@@ -118,7 +124,7 @@ src/
 - ~~**大規模な初期化**: main.rsの複雑な初期化処理~~ ✅ **解決済み** (プラグインシステム導入)
 
 #### コンポーネント設計
-- **重複するLevel**: `management_stats::Level`と`upgradeable_stat::Level`
+- ~~**重複するLevel**: `management_stats::Level`と`upgradeable_stat::Level`~~ ✅ **解決済み** (UpgradeLevel に変更)
 - ~~**ステータス同期の複雑性**: BaseStats ↔ CombatStats間の同期~~ ✅ **解決済み**
 - **命名の一貫性**: 一部のコンポーネント名が不明確
 
@@ -164,11 +170,11 @@ pub struct UpgradeableSpeed;   // スピード用マーカー
 Query<&CurrentValue, (With<UpgradeableHp>, Changed<CurrentValue>)>
 ```
 
-#### Level コンポーネントの統一
+#### ~~Level コンポーネントの統一~~ ✅ **完了** (2025-06-19)
 ```rust
-// 重複解消
-pub use upgradeable_stat::Level as UpgradeLevel;
-pub use management_stats::Level as PlayerLevel;
+// ✅ 重複解消完了
+// Before: upgradeable_stat::Level と management_stats::Level の重複
+// After: upgradeable_stats::UpgradeLevel に変更、重複解消
 ```
 
 ### ~~3.3 UIシステム分離【優先度: 中】~~ ✅ **完了** (2025-06-19)
@@ -472,7 +478,69 @@ UpgradeableAttackBundle::new(base_value, cost, multiplier, cost_multiplier)
 1. ~~**real_time_attack_system 分割**~~ ✅ **完了** (55行 → プレイヤー/敵攻撃システム分離)
 2. ~~**UI分離**~~ ✅ **完了** (UIPlugin + UI専用モジュール分離)
 3. ~~**プラグインシステム導入**~~ ✅ **完了** (main.rs 55行 → 13行に削減)
-4. **テスト拡充** (特に新しく分離したシステムの単体テスト)
-5. **Level コンポーネント統一** (management_stats::Level と upgradeable_stat::Level の重複解消)
+4. ~~**アップグレードシステム分離**~~ ✅ **完了** (2025-06-19) (components/systems分離)
+5. ~~**Level コンポーネント統一**~~ ✅ **完了** (UpgradeLevel に変更、重複解消)
+6. **テスト拡充** (特に新しく分離したシステムの単体テスト)
+
+## 7. アップグレードシステム分離リファクタリング (2025-06-19)
+
+### 7.1 解決した問題
+- **アーキテクチャ不整合の解消**: `src/upgradeable_stat.rs` が根レベルに配置され、他のコンポーネント・システムと構成が異なっていた
+- **関心の分離実現**: コンポーネントとシステムが同一ファイルに混在 → 適切なディレクトリに分離
+- **命名衝突の解決**: `upgradeable_stat::Level` と `management_stats::Level` の重複 → `UpgradeLevel` に変更
+- **ECS原則への準拠**: 他のモジュールと同じ構成パターンに統一
+
+### 7.2 実装したアーキテクチャ
+
+**移行前の構造**:
+```rust
+// Before: 根レベルに全て混在
+src/upgradeable_stat.rs  // コンポーネント + システム + テスト (371行)
+```
+
+**移行後の構造**:
+```rust
+// After: 関心の分離完了
+src/components/upgradeable_stats.rs  // コンポーネント定義・Bundle・ユーティリティ
+src/systems/upgrades.rs              // アップグレード・同期システム
+```
+
+**コンポーネントの整理** (`components/upgradeable_stats.rs`):
+```rust
+// 基本コンポーネント
+CurrentValue, BaseValue, UpgradeLevel  // Level → UpgradeLevel に変更
+UpgradeCost, UpgradeMultiplier, CostMultiplier
+
+// 型安全マーカー
+UpgradeableHp, UpgradeableAttack, UpgradeableDefense, UpgradeableSpeed
+
+// Bundle構成
+UpgradeableStatBundle, UpgradeableHpBundle, UpgradeableAttackBundle, ...
+```
+
+**システムの整理** (`systems/upgrades.rs`):
+```rust
+// アップグレードシステム
+upgradeable_stat_upgrade_system()     // 経験値による自動アップグレード
+update_current_value_on_change()      // 値変更時の再計算
+
+// 同期システム（combat_end.rs から移動）
+hp_sync_system(), attack_sync_system()  // 各ステータス専用同期
+defense_sync_system(), speed_sync_system()
+```
+
+### 7.3 結果と検証
+- **コンパイル成功**: デバッグ・リリースビルド共に成功
+- **全テスト通過**: 24個のテストケースすべて成功
+- **機能リグレッションなし**: アップグレード・同期システムが正常動作
+- **アーキテクチャ統一**: 他のモジュールと同じ構成パターンに準拠
+- **命名衝突解消**: `management_stats::Level` と `UpgradeLevel` で明確に分離
+
+### 7.4 技術的詳細
+- **ファイル分離**: 371行の巨大ファイル → 適切な関心事ごとに分離
+- **命名変更**: `upgradeable_stat::Level` → `upgradeable_stats::UpgradeLevel`
+- **システム移動**: 同期システムを `combat_end.rs` から `upgrades.rs` に集約
+- **インポート整理**: 古い `crate::upgradeable_stat::` 参照をすべて更新
+- **後方互換性**: 既存のAPIを維持しつつ構造を改善
 
 このアーキテクチャドキュメントは、コードベースの成長と共に定期的に更新し、ECS設計原則との整合性を維持することを推奨します。
