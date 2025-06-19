@@ -41,7 +41,12 @@ fn main() {
             // Upgrade and sync systems
             upgradeable_stat_upgrade_system,
             update_current_value_on_change,
-            sync_stats_system.after(upgradeable_stat_upgrade_system),
+            (
+                hp_sync_system,
+                attack_sync_system,
+                defense_sync_system,
+                speed_sync_system,
+            ).after(upgradeable_stat_upgrade_system),
             
             // UI systems
             update_ui_system,

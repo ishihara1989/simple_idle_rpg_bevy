@@ -34,10 +34,68 @@ impl UpgradeableStat {
     }
 }
 
+// Typed marker components for each stat type (replaces string-based identification)
+#[derive(Component, Clone, Debug)]
+pub struct UpgradeableHp;
+
+#[derive(Component, Clone, Debug)]
+pub struct UpgradeableAttack;
+
+#[derive(Component, Clone, Debug)]
+pub struct UpgradeableDefense;
+
+#[derive(Component, Clone, Debug)]
+pub struct UpgradeableSpeed;
+
 // エンティティ作成用のヘルパーBundle
 #[derive(Bundle)]
 pub struct UpgradeableStatBundle {
     pub upgradeable_stat: UpgradeableStat,
+    pub current_value: CurrentValue,
+    pub base_value: BaseValue,
+    pub level: Level,
+    pub upgrade_cost: UpgradeCost,
+    pub upgrade_multiplier: UpgradeMultiplier,
+    pub cost_multiplier: CostMultiplier,
+}
+
+// Typed bundles for each stat type (type-safe replacement)
+#[derive(Bundle)]
+pub struct UpgradeableHpBundle {
+    pub marker: UpgradeableHp,
+    pub current_value: CurrentValue,
+    pub base_value: BaseValue,
+    pub level: Level,
+    pub upgrade_cost: UpgradeCost,
+    pub upgrade_multiplier: UpgradeMultiplier,
+    pub cost_multiplier: CostMultiplier,
+}
+
+#[derive(Bundle)]
+pub struct UpgradeableAttackBundle {
+    pub marker: UpgradeableAttack,
+    pub current_value: CurrentValue,
+    pub base_value: BaseValue,
+    pub level: Level,
+    pub upgrade_cost: UpgradeCost,
+    pub upgrade_multiplier: UpgradeMultiplier,
+    pub cost_multiplier: CostMultiplier,
+}
+
+#[derive(Bundle)]
+pub struct UpgradeableDefenseBundle {
+    pub marker: UpgradeableDefense,
+    pub current_value: CurrentValue,
+    pub base_value: BaseValue,
+    pub level: Level,
+    pub upgrade_cost: UpgradeCost,
+    pub upgrade_multiplier: UpgradeMultiplier,
+    pub cost_multiplier: CostMultiplier,
+}
+
+#[derive(Bundle)]
+pub struct UpgradeableSpeedBundle {
+    pub marker: UpgradeableSpeed,
     pub current_value: CurrentValue,
     pub base_value: BaseValue,
     pub level: Level,
@@ -56,6 +114,82 @@ impl UpgradeableStatBundle {
     ) -> Self {
         Self {
             upgradeable_stat: UpgradeableStat::new(name),
+            current_value: CurrentValue(base_value),
+            base_value: BaseValue(base_value),
+            level: Level(0),
+            upgrade_cost: UpgradeCost(initial_cost),
+            upgrade_multiplier: UpgradeMultiplier(upgrade_multiplier),
+            cost_multiplier: CostMultiplier(cost_multiplier),
+        }
+    }
+}
+
+impl UpgradeableHpBundle {
+    pub fn new(
+        base_value: BigFloat,
+        initial_cost: BigFloat,
+        upgrade_multiplier: f64,
+        cost_multiplier: f64,
+    ) -> Self {
+        Self {
+            marker: UpgradeableHp,
+            current_value: CurrentValue(base_value),
+            base_value: BaseValue(base_value),
+            level: Level(0),
+            upgrade_cost: UpgradeCost(initial_cost),
+            upgrade_multiplier: UpgradeMultiplier(upgrade_multiplier),
+            cost_multiplier: CostMultiplier(cost_multiplier),
+        }
+    }
+}
+
+impl UpgradeableAttackBundle {
+    pub fn new(
+        base_value: BigFloat,
+        initial_cost: BigFloat,
+        upgrade_multiplier: f64,
+        cost_multiplier: f64,
+    ) -> Self {
+        Self {
+            marker: UpgradeableAttack,
+            current_value: CurrentValue(base_value),
+            base_value: BaseValue(base_value),
+            level: Level(0),
+            upgrade_cost: UpgradeCost(initial_cost),
+            upgrade_multiplier: UpgradeMultiplier(upgrade_multiplier),
+            cost_multiplier: CostMultiplier(cost_multiplier),
+        }
+    }
+}
+
+impl UpgradeableDefenseBundle {
+    pub fn new(
+        base_value: BigFloat,
+        initial_cost: BigFloat,
+        upgrade_multiplier: f64,
+        cost_multiplier: f64,
+    ) -> Self {
+        Self {
+            marker: UpgradeableDefense,
+            current_value: CurrentValue(base_value),
+            base_value: BaseValue(base_value),
+            level: Level(0),
+            upgrade_cost: UpgradeCost(initial_cost),
+            upgrade_multiplier: UpgradeMultiplier(upgrade_multiplier),
+            cost_multiplier: CostMultiplier(cost_multiplier),
+        }
+    }
+}
+
+impl UpgradeableSpeedBundle {
+    pub fn new(
+        base_value: BigFloat,
+        initial_cost: BigFloat,
+        upgrade_multiplier: f64,
+        cost_multiplier: f64,
+    ) -> Self {
+        Self {
+            marker: UpgradeableSpeed,
             current_value: CurrentValue(base_value),
             base_value: BaseValue(base_value),
             level: Level(0),

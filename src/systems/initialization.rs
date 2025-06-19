@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use too_big_float::BigFloat;
 use crate::components::*;
-use crate::upgradeable_stat::{UpgradeableStatBundle, calculate_exponential_growth};
+use crate::upgradeable_stat::{UpgradeableHpBundle, UpgradeableAttackBundle, UpgradeableDefenseBundle, UpgradeableSpeedBundle, calculate_exponential_growth};
 
 // Initialize player with base management stats
 pub fn player_init_system(mut commands: Commands) {
@@ -23,11 +23,11 @@ pub fn player_init_system(mut commands: Commands) {
         RebirthPoints(BigFloat::from(0.0)),
     ));
 
-    // Create upgradeable stat entities (keeping existing system)
-    commands.spawn(UpgradeableStatBundle::new("HP", base_hp, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Attack", base_attack, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Defense", base_defense, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Speed", base_speed, base_cost, 1.15, 1.3));
+    // Create upgradeable stat entities using typed bundles
+    commands.spawn(UpgradeableHpBundle::new(base_hp, base_cost.clone(), 1.15, 1.3));
+    commands.spawn(UpgradeableAttackBundle::new(base_attack, base_cost.clone(), 1.15, 1.3));
+    commands.spawn(UpgradeableDefenseBundle::new(base_defense, base_cost.clone(), 1.15, 1.3));
+    commands.spawn(UpgradeableSpeedBundle::new(base_speed, base_cost, 1.15, 1.3));
 }
 
 // Initialize combat by copying management stats to combat stats
@@ -105,11 +105,11 @@ pub fn rebirth_player_system(
         RebirthPoints(additional_rebirth_points),
     ));
 
-    // Create new upgradeable stat entities
-    commands.spawn(UpgradeableStatBundle::new("HP", base_hp, base_cost, 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Attack", base_attack, base_cost, 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Defense", base_defense, base_cost, 1.15, 1.3));
-    commands.spawn(UpgradeableStatBundle::new("Speed", base_speed, base_cost, 1.15, 1.3));
+    // Create new upgradeable stat entities using typed bundles
+    commands.spawn(UpgradeableHpBundle::new(base_hp, base_cost, 1.15, 1.3));
+    commands.spawn(UpgradeableAttackBundle::new(base_attack, base_cost, 1.15, 1.3));
+    commands.spawn(UpgradeableDefenseBundle::new(base_defense, base_cost, 1.15, 1.3));
+    commands.spawn(UpgradeableSpeedBundle::new(base_speed, base_cost, 1.15, 1.3));
 
     // Add combat timer
     commands.spawn(CombatTimer {

@@ -114,45 +114,54 @@ pub fn next_enemy_spawn_system(
     }
 }
 
-// Sync management stats to combat stats when upgrades happen  
-pub fn sync_stats_system(
-    mut player_query: Query<(
-        &mut CombatAttack, 
-        &mut CombatDefense, 
-        &mut CombatSpeed, 
-        &mut MaxHp,
-        &mut CurrentHp,
-        &BaseAttack, 
-        &BaseDefense, 
-        &BaseSpeed, 
-        &BaseHp
-    ), With<Player>>,
-    stats: Query<(&crate::upgradeable_stat::UpgradeableStat, &crate::upgradeable_stat::CurrentValue), Changed<crate::upgradeable_stat::CurrentValue>>,
+
+// Type-safe sync systems - sync management stats to combat stats when upgrades happen
+pub fn hp_sync_system(
+    mut player_query: Query<(&mut MaxHp, &mut CurrentHp), With<Player>>,
+    hp_stats: Query<&crate::upgradeable_stat::CurrentValue, (With<crate::upgradeable_stat::UpgradeableHp>, Changed<crate::upgradeable_stat::CurrentValue>)>,
 ) {
-    if let Ok((mut combat_attack, mut combat_defense, mut combat_speed, mut max_hp, mut current_hp, _base_attack, _base_defense, _base_speed, _base_hp)) = player_query.single_mut() {
-        
-        for (stat, current_value) in stats.iter() {
+    if let Ok((mut max_hp, mut current_hp)) = player_query.single_mut() {
+        for current_value in hp_stats.iter() {
             let old_max_hp = max_hp.0;
+            max_hp.0 = current_value.0;
             
-            match stat.name.as_str() {
-                "HP" => {
-                    max_hp.0 = current_value.0;
-                    // If max HP changed, update current HP
-                    if max_hp.0 != old_max_hp {
-                        current_hp.0 = max_hp.0;
-                    }
-                }
-                "Attack" => {
-                    combat_attack.0 = current_value.0;
-                }
-                "Defense" => {
-                    combat_defense.0 = current_value.0;
-                }
-                "Speed" => {
-                    combat_speed.0 = current_value.0;
-                }
-                _ => {} // Unknown stat name, ignore
+            // If max HP changed, update current HP to full
+            if max_hp.0 != old_max_hp {
+                current_hp.0 = max_hp.0;
             }
+        }
+    }
+}
+
+pub fn attack_sync_system(
+    mut player_query: Query<&mut CombatAttack, With<Player>>,
+    attack_stats: Query<&crate::upgradeable_stat::CurrentValue, (With<crate::upgradeable_stat::UpgradeableAttack>, Changed<crate::upgradeable_stat::CurrentValue>)>,
+) {
+    if let Ok(mut combat_attack) = player_query.single_mut() {
+        for current_value in attack_stats.iter() {
+            combat_attack.0 = current_value.0;
+        }
+    }
+}
+
+pub fn defense_sync_system(
+    mut player_query: Query<&mut CombatDefense, With<Player>>,
+    defense_stats: Query<&crate::upgradeable_stat::CurrentValue, (With<crate::upgradeable_stat::UpgradeableDefense>, Changed<crate::upgradeable_stat::CurrentValue>)>,
+) {
+    if let Ok(mut combat_defense) = player_query.single_mut() {
+        for current_value in defense_stats.iter() {
+            combat_defense.0 = current_value.0;
+        }
+    }
+}
+
+pub fn speed_sync_system(
+    mut player_query: Query<&mut CombatSpeed, With<Player>>,
+    speed_stats: Query<&crate::upgradeable_stat::CurrentValue, (With<crate::upgradeable_stat::UpgradeableSpeed>, Changed<crate::upgradeable_stat::CurrentValue>)>,
+) {
+    if let Ok(mut combat_speed) = player_query.single_mut() {
+        for current_value in speed_stats.iter() {
+            combat_speed.0 = current_value.0;
         }
     }
 }
