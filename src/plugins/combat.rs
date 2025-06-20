@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use crate::{
     AttackEvent, DeathEvent, PlayerDeathEvent, EnemyDeathEvent, 
-    ExpGainEvent, NextEnemySpawnEvent, CombatEndEvent, CombatState,
-    combat_init_system, attack_cooldown_system, player_attack_system, 
+    ExpGainEvent, NextEnemySpawnEvent, CombatEndEvent, CombatStartEvent, CombatState,
+    combat_init_system, combat_start_system, attack_cooldown_system, player_attack_system, 
     enemy_attack_system, damage_application_system, death_detection_system,
     enemy_death_system, player_death_system, exp_gain_system, next_enemy_spawn_system
 };
@@ -17,6 +17,7 @@ impl Plugin for CombatPlugin {
                 in_dungeon: false,
             })
             // Add combat events
+            .add_event::<CombatStartEvent>()
             .add_event::<AttackEvent>()
             .add_event::<DeathEvent>()
             .add_event::<PlayerDeathEvent>()
@@ -26,6 +27,9 @@ impl Plugin for CombatPlugin {
             .add_event::<CombatEndEvent>()
             // Add combat systems
             .add_systems(Update, (
+                // Combat control systems
+                combat_start_system,
+                
                 // Initialization (only runs when needed)
                 combat_init_system,
                 

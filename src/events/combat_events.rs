@@ -3,6 +3,10 @@ use too_big_float::BigFloat;
 
 // Combat-related events for loose coupling between systems
 #[derive(Event)]
+pub struct CombatStartEvent {
+    pub is_retry: bool,
+}
+#[derive(Event)]
 pub struct CombatEndEvent {
     pub winner: CombatWinner,
     pub exp_gained: BigFloat,

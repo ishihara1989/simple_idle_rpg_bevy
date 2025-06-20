@@ -4,7 +4,7 @@ use crate::{
     Level, Experience,
     CurrentHp, MaxHp, CombatAttack, CombatDefense, CombatSpeed,
     UpgradeLevel, UpgradeableHp, UpgradeableAttack, UpgradeableDefense, UpgradeableSpeed,
-    EnemyNumber, StartupConfig,
+    EnemyNumber, StartupConfig, AutomationConfig,
 };
 use std::time::Duration;
 
@@ -13,6 +13,10 @@ pub struct BalanceCheckPlugin;
 impl Plugin for BalanceCheckPlugin {
     fn build(&self, app: &mut App) {
         app
+            .insert_resource(AutomationConfig {
+                auto_retry_unlocked: true,  // Always unlocked in balance check mode
+                auto_retry_enabled: true,   // Always enabled in balance check mode
+            })
             .add_systems(Startup, setup_balance_check_timer)
             .add_systems(Update, (
                 balance_check_output_system,

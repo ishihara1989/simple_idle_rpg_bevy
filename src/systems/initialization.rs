@@ -77,6 +77,7 @@ pub fn player_init_system(
 pub fn combat_init_system(
     mut commands: Commands,
     player_query: Query<(Entity, &BaseHp, &BaseAttack, &BaseDefense, &BaseSpeed), (With<Player>, Without<CurrentHp>)>,
+    enemies: Query<Entity, With<Enemy>>,
     game_progress: Res<GameProgress>,
 ) {
     if let Ok((player_entity, base_hp, base_attack, base_defense, base_speed)) = player_query.single() {
@@ -90,8 +91,10 @@ pub fn combat_init_system(
             AttackCooldown(0.0), // Start ready to attack
         ));
 
-        // Spawn initial enemy
-        spawn_enemy(&mut commands, game_progress.current_enemy_number);
+        // Spawn initial enemy if none exist
+        if enemies.iter().count() == 0 {
+            spawn_enemy(&mut commands, game_progress.current_enemy_number);
+        }
 
         // Add combat timer
         commands.spawn(CombatTimer {

@@ -64,6 +64,7 @@ pub fn player_death_system(
     mut combat_state: ResMut<CombatState>,
     mut game_progress: ResMut<GameProgress>,
     mut automation_config: ResMut<AutomationConfig>,
+    mut combat_start_events: EventWriter<CombatStartEvent>,
     enemy_query: Query<Entity, With<Enemy>>,
 ) {
     // Process only the first death event to avoid moving commands multiple times
@@ -92,10 +93,9 @@ pub fn player_death_system(
             automation_config.auto_retry_unlocked = true;
         }
         
-        // Auto retry if enabled
+        // Auto retry if enabled - use event instead of direct state change
         if automation_config.auto_retry_enabled {
-            combat_state.is_game_over = false;
-            combat_state.in_dungeon = true;
+            combat_start_events.write(CombatStartEvent { is_retry: true });
         }
         
         // Rebirth player with enhanced stats

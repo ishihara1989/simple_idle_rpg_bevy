@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::{CombatState, AutomationConfig, DungeonButton, DungeonButtonText, AutoRetryButton, AutoRetryButtonText};
+use crate::events::CombatStartEvent;
 
 pub fn dungeon_button_system(
     mut interaction_query: Query<
@@ -7,17 +8,19 @@ pub fn dungeon_button_system(
         (Changed<Interaction>, With<Button>, With<DungeonButton>),
     >,
     mut button_text_query: Query<&mut Text, With<DungeonButtonText>>,
-    mut combat_state: ResMut<CombatState>,
+    combat_state: Res<CombatState>,
     automation_config: Res<AutomationConfig>,
+    mut combat_start_events: EventWriter<CombatStartEvent>,
 ) {
     for (interaction, mut background_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 if !combat_state.in_dungeon && !combat_state.is_game_over {
-                    combat_state.in_dungeon = true;
+                    // Start new dungeon
+                    combat_start_events.write(CombatStartEvent { is_retry: false });
                 } else if combat_state.is_game_over {
-                    combat_state.in_dungeon = true;
-                    combat_state.is_game_over = false;
+                    // Manual retry
+                    combat_start_events.write(CombatStartEvent { is_retry: true });
                 }
                 *background_color = BackgroundColor(Color::srgb(0.1, 0.5, 0.1));
             }
@@ -53,12 +56,20 @@ pub fn auto_retry_button_system(
     >,
     mut button_text_query: Query<&mut Text, With<AutoRetryButtonText>>,
     mut automation_config: ResMut<AutomationConfig>,
+    combat_state: Res<CombatState>,
+    mut combat_start_events: EventWriter<CombatStartEvent>,
 ) {
     for (interaction, mut background_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 if automation_config.auto_retry_unlocked {
+                    let was_enabled = automation_config.auto_retry_enabled;
                     automation_config.auto_retry_enabled = !automation_config.auto_retry_enabled;
+                    
+                    // If auto retry was just turned ON and we're in game over state, start combat
+                    if !was_enabled && automation_config.auto_retry_enabled && combat_state.is_game_over {
+                        combat_start_events.write(CombatStartEvent { is_retry: true });
+                    }
                 }
                 *background_color = BackgroundColor(Color::srgb(0.3, 0.3, 0.7));
             }
