@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use too_big_float::BigFloat;
 use crate::components::*;
-use crate::StartupConfig;
+use crate::{StartupConfig, GameProgress};
 // All components are now imported via crate::components::*
 
 // Initialize player with base management stats
@@ -77,7 +77,7 @@ pub fn player_init_system(
 pub fn combat_init_system(
     mut commands: Commands,
     player_query: Query<(Entity, &BaseHp, &BaseAttack, &BaseDefense, &BaseSpeed), (With<Player>, Without<CurrentHp>)>,
-    game_state: Res<GameState>,
+    game_progress: Res<GameProgress>,
 ) {
     if let Ok((player_entity, base_hp, base_attack, base_defense, base_speed)) = player_query.single() {
         // Add combat stats to player entity
@@ -91,7 +91,7 @@ pub fn combat_init_system(
         ));
 
         // Spawn initial enemy
-        spawn_enemy(&mut commands, game_state.current_enemy_number);
+        spawn_enemy(&mut commands, game_progress.current_enemy_number);
 
         // Add combat timer
         commands.spawn(CombatTimer {

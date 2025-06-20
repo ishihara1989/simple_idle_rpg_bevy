@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::components::*;
+    use crate::{CombatState, GameProgress, UIState, AutomationConfig, GameTab};
     use too_big_float::BigFloat;
 
     #[test]
@@ -51,16 +52,45 @@ mod tests {
     }
 
     #[test]
-    fn test_game_state() {
-        let game_state = GameState {
+    fn test_combat_state() {
+        let combat_state = CombatState {
             is_game_over: false,
+            in_dungeon: true,
+        };
+
+        assert!(!combat_state.is_game_over);
+        assert!(combat_state.in_dungeon);
+    }
+
+    #[test]
+    fn test_game_progress() {
+        let game_progress = GameProgress {
             current_enemy_number: 5,
+            has_died_once: false,
+        };
+
+        assert_eq!(game_progress.current_enemy_number, 5);
+        assert!(!game_progress.has_died_once);
+    }
+
+    #[test]
+    fn test_ui_state() {
+        let ui_state = UIState {
             current_tab: GameTab::Combat,
         };
 
-        assert!(!game_state.is_game_over);
-        assert_eq!(game_state.current_enemy_number, 5);
-        assert_eq!(game_state.current_tab, GameTab::Combat);
+        assert_eq!(ui_state.current_tab, GameTab::Combat);
+    }
+
+    #[test]
+    fn test_automation_config() {
+        let automation_config = AutomationConfig {
+            auto_retry_unlocked: true,
+            auto_retry_enabled: false,
+        };
+
+        assert!(automation_config.auto_retry_unlocked);
+        assert!(!automation_config.auto_retry_enabled);
     }
 
     #[test]

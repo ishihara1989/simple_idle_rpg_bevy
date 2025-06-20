@@ -85,3 +85,7 @@ Tests are organized by concern:
 ## Development Guidelines
 
 - リファクタリングや新要素の追加、ファイルの追加などがあったときはドキュメントの更新が必要か確認する
+
+## Pre-Development Tasks
+
+- 作業開始前にREADME.mdとARCHITECTURE.mdとGAME_SPEC.mdを読む

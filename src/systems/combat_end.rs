@@ -3,6 +3,7 @@ use too_big_float::BigFloat;
 use crate::components::*;
 use crate::events::*;
 use crate::systems::initialization::{rebirth_player_system, spawn_enemy};
+use crate::{CombatState, GameProgress, AutomationConfig};
 
 // Detect deaths and handle the aftermath
 pub fn death_detection_system(
@@ -60,14 +61,16 @@ pub fn enemy_death_system(
 pub fn player_death_system(
     mut commands: Commands,
     mut player_death_events: EventReader<PlayerDeathEvent>,
-    mut game_state: ResMut<GameState>,
+    mut combat_state: ResMut<CombatState>,
+    mut game_progress: ResMut<GameProgress>,
+    mut automation_config: ResMut<AutomationConfig>,
     enemy_query: Query<Entity, With<Enemy>>,
 ) {
     // Process only the first death event to avoid moving commands multiple times
     if let Some(death) = player_death_events.read().next() {
         println!("Game Over! Starting rebirth...");
         
-        let rebirth_gain = BigFloat::from(game_state.current_enemy_number as f64);
+        let rebirth_gain = BigFloat::from(game_progress.current_enemy_number as f64);
         println!("Gained {} rebirth points", rebirth_gain);
         
         // Remove player and enemies
@@ -76,9 +79,24 @@ pub fn player_death_system(
             commands.entity(enemy_entity).despawn();
         }
         
-        // Reset game state
-        game_state.current_enemy_number = 1;
-        game_state.is_game_over = false;
+        // Reset game progress
+        game_progress.current_enemy_number = 1;
+        game_progress.has_died_once = true;
+        
+        // Reset combat state
+        combat_state.is_game_over = true;
+        combat_state.in_dungeon = false;
+        
+        // Unlock auto retry after first death
+        if !automation_config.auto_retry_unlocked {
+            automation_config.auto_retry_unlocked = true;
+        }
+        
+        // Auto retry if enabled
+        if automation_config.auto_retry_enabled {
+            combat_state.is_game_over = false;
+            combat_state.in_dungeon = true;
+        }
         
         // Rebirth player with enhanced stats
         rebirth_player_system(&mut commands, rebirth_gain);
@@ -105,10 +123,10 @@ pub fn exp_gain_system(
 pub fn next_enemy_spawn_system(
     mut commands: Commands,
     mut next_enemy_events: EventReader<NextEnemySpawnEvent>,
-    mut game_state: ResMut<GameState>,
+    mut game_progress: ResMut<GameProgress>,
 ) {
     for spawn in next_enemy_events.read() {
-        game_state.current_enemy_number = spawn.enemy_number;
+        game_progress.current_enemy_number = spawn.enemy_number;
         spawn_enemy(&mut commands, spawn.enemy_number);
         println!("Spawning enemy #{}", spawn.enemy_number);
     }

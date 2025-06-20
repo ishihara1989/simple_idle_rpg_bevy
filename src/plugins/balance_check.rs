@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::{
     Player, Enemy, 
-    Level, Experience, BaseAttack, BaseDefense, BaseSpeed, BaseHp,
+    Level, Experience,
     CurrentHp, MaxHp, CombatAttack, CombatDefense, CombatSpeed,
     UpgradeLevel, UpgradeableHp, UpgradeableAttack, UpgradeableDefense, UpgradeableSpeed,
     EnemyNumber, StartupConfig,
@@ -72,7 +72,7 @@ fn balance_check_output_system(
         println!("\n=== Balance Check Report #{} ===", timer.output_count);
         
         // プレイヤー情報出力
-        if let Ok((level, experience, current_hp, max_hp, attack, defense, speed)) = player_query.get_single() {
+        if let Ok((level, experience, current_hp, max_hp, attack, defense, speed)) = player_query.single() {
             println!("Player Status:");
             if let Some(level) = level {
                 println!("  Level: {}", level.0);
@@ -94,16 +94,16 @@ fn balance_check_output_system(
             }
             
             println!("  Upgradeable Stats:");
-            if let Ok(hp_level) = upgradeable_hp_query.get_single() {
+            if let Ok(hp_level) = upgradeable_hp_query.single() {
                 println!("    HP Level: {}", hp_level.0);
             }
-            if let Ok(att_level) = upgradeable_attack_query.get_single() {
+            if let Ok(att_level) = upgradeable_attack_query.single() {
                 println!("    Attack Level: {}", att_level.0);
             }
-            if let Ok(def_level) = upgradeable_defense_query.get_single() {
+            if let Ok(def_level) = upgradeable_defense_query.single() {
                 println!("    Defense Level: {}", def_level.0);
             }
-            if let Ok(spd_level) = upgradeable_speed_query.get_single() {
+            if let Ok(spd_level) = upgradeable_speed_query.single() {
                 println!("    Speed Level: {}", spd_level.0);
             }
         }
@@ -144,6 +144,6 @@ fn auto_shutdown_system(
 ) {
     if timer.output_count >= timer.max_outputs {
         println!("Balance check completed. Shutting down...");
-        exit.send(AppExit::Success);
+        exit.write(AppExit::Success);
     }
 }

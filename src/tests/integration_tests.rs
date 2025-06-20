@@ -4,6 +4,7 @@ mod tests {
     use too_big_float::BigFloat;
     use crate::components::*;
     use crate::events::*;
+    use crate::{CombatState, GameProgress, UIState, GameTab};
 
     #[test]
     fn test_component_integration() {
@@ -91,16 +92,26 @@ mod tests {
     }
     
     #[test]
-    fn test_game_state_and_enums() {
-        let game_state = GameState {
+    fn test_ecs_resources_and_enums() {
+        let combat_state = CombatState {
             is_game_over: false,
+            in_dungeon: true,
+        };
+        
+        let game_progress = GameProgress {
             current_enemy_number: 10,
+            has_died_once: false,
+        };
+        
+        let ui_state = UIState {
             current_tab: GameTab::Combat,
         };
         
-        assert!(!game_state.is_game_over);
-        assert_eq!(game_state.current_enemy_number, 10);
-        assert_eq!(game_state.current_tab, GameTab::Combat);
+        assert!(!combat_state.is_game_over);
+        assert!(combat_state.in_dungeon);
+        assert_eq!(game_progress.current_enemy_number, 10);
+        assert!(!game_progress.has_died_once);
+        assert_eq!(ui_state.current_tab, GameTab::Combat);
         
         // Test enum equality
         assert_eq!(GameTab::Combat, GameTab::Combat);

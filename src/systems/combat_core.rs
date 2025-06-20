@@ -2,14 +2,15 @@ use bevy::prelude::*;
 use too_big_float::BigFloat;
 use crate::components::*;
 use crate::events::*;
+use crate::CombatState;
 
 // Real-time cooldown system - reduces cooldowns based on speed and time
 pub fn attack_cooldown_system(
     time: Res<Time>,
     mut cooldown_query: Query<(&mut AttackCooldown, &CombatSpeed)>,
-    game_state: Res<GameState>,
+    combat_state: Res<CombatState>,
 ) {
-    if game_state.is_game_over {
+    if combat_state.is_game_over || !combat_state.in_dungeon {
         return;
     }
 
@@ -63,9 +64,9 @@ pub fn player_attack_system(
     mut attack_events: EventWriter<AttackEvent>,
     mut player_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Player>, Without<Enemy>)>,
     target_query: Query<(Entity, &CombatDefense), (With<Enemy>, Without<Player>)>,
-    game_state: Res<GameState>,
+    combat_state: Res<CombatState>,
 ) {
-    if game_state.is_game_over {
+    if combat_state.is_game_over || !combat_state.in_dungeon {
         return;
     }
 
@@ -90,9 +91,9 @@ pub fn enemy_attack_system(
     mut attack_events: EventWriter<AttackEvent>,
     mut enemy_query: Query<(Entity, &CombatAttack, &CombatSpeed, &mut AttackCooldown), (With<Enemy>, Without<Player>)>,
     target_query: Query<(Entity, &CombatDefense), (With<Player>, Without<Enemy>)>,
-    game_state: Res<GameState>,
+    combat_state: Res<CombatState>,
 ) {
-    if game_state.is_game_over {
+    if combat_state.is_game_over || !combat_state.in_dungeon {
         return;
     }
 
