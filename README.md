@@ -85,6 +85,7 @@ src/
 ## Key Features
 
 - **Real-time Combat** - Continuous battle system with attack cooldowns
+- **Event-driven Auto Retry** - Seamless combat restart with immediate response
 - **Stat Upgrades** - Exponential growth progression system
 - **ECS Architecture** - Clean, modular design using Bevy ECS
 - **Balance Testing** - Headless mode for gameplay tuning

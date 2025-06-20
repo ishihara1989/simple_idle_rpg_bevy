@@ -496,7 +496,8 @@ UpgradeableAttackBundle::new(base_value, cost, multiplier, cost_multiplier)
 3. ~~**プラグインシステム導入**~~ ✅ **完了** (main.rs 55行 → 13行に削減)
 4. ~~**アップグレードシステム分離**~~ ✅ **完了** (2025-06-19) (components/systems分離)
 5. ~~**Level コンポーネント統一**~~ ✅ **完了** (UpgradeLevel に変更、重複解消)
-6. **テスト拡充** (特に新しく分離したシステムの単体テスト)
+6. ~~**イベント駆動戦闘開始システム**~~ ✅ **完了** (2025-06-20) (CombatStartEvent導入)
+7. **テスト拡充** (特に新しく分離したシステムの単体テスト)
 
 ## 7. アップグレードシステム分離リファクタリング (2025-06-19)
 
@@ -558,5 +559,58 @@ defense_sync_system(), speed_sync_system()
 - **システム移動**: 同期システムを `combat_end.rs` から `upgrades.rs` に集約
 - **インポート整理**: 古い `crate::upgradeable_stat::` 参照をすべて更新
 - **後方互換性**: 既存のAPIを維持しつつ構造を改善
+
+## 8. イベント駆動戦闘開始システム実装 (2025-06-20)
+
+### 8.1 解決した問題
+- **直接的状態変更の排除**: UIシステムが`CombatState`を直接変更していた問題を解決
+- **戦闘開始フローの統一**: ダンジョンボタン、手動リトライ、オートリトライが異なるロジックを使用していた問題
+- **オートリトライの即応性**: ゲームオーバー状態でオートリトライをONにしても戦闘が始まらない問題
+- **責任の分離**: UI・死亡システム・戦闘システム間の疎結合を実現
+
+### 8.2 実装したアーキテクチャ
+
+**新しいイベント駆動フロー**:
+```rust
+// 戦闘開始の統一イベント
+#[derive(Event)]
+pub struct CombatStartEvent {
+    pub is_retry: bool,
+}
+
+// 戦闘開始システム（一元管理）
+combat_start_system() → combat_state.in_dungeon = true
+```
+
+**イベント発行源**:
+```rust
+// 1. ダンジョンボタン（新規・手動リトライ）
+dungeon_button_system() → CombatStartEvent { is_retry: false/true }
+
+// 2. オートリトライボタン（ゲームオーバー中の切り替え）
+auto_retry_button_system() → CombatStartEvent { is_retry: true }
+
+// 3. 死亡時オートリトライ
+player_death_system() → CombatStartEvent { is_retry: true }
+```
+
+**戦闘初期化フロー**:
+```rust
+CombatStartEvent → combat_start_system → combat_init_system → 戦闘コンポーネント追加
+```
+
+### 8.3 結果と検証
+- **完全なイベント駆動**: 全ての戦闘開始が`CombatStartEvent`で統一
+- **即応オートリトライ**: ゲームオーバー中のボタン操作で即座に戦闘開始
+- **責任分離**: UIは状態変更せず、イベント発行のみに責任を限定
+- **一貫した初期化**: `combat_init_system`が確実に実行され、戦闘コンポーネントが追加
+- **全テスト通過**: 27個のテストケースで既存機能への影響なしを確認
+
+### 8.4 技術的詳細
+- **新ファイル**: `src/systems/combat_start.rs` - 戦闘開始の一元管理システム
+- **イベント追加**: `src/events/combat_events.rs` - `CombatStartEvent`定義
+- **UI修正**: `src/ui/dungeon_ui.rs` - イベント発行への変更
+- **死亡システム修正**: `src/systems/combat_end.rs` - イベント駆動オートリトライ
+- **プラグイン更新**: `src/plugins/combat.rs` - 新システム・イベントの登録
 
 このアーキテクチャドキュメントは、コードベースの成長と共に定期的に更新し、ECS設計原則との整合性を維持することを推奨します。

@@ -48,9 +48,11 @@ The game is organized into 5 main plugins, each handling a specific domain:
 - Individual sync systems for each stat type to maintain ECS single responsibility
 
 ### Event-Driven Combat Flow
-1. **Real-time Phase**: `attack_cooldown_system` → `player_attack_system`/`enemy_attack_system` → `AttackEvent`
-2. **Damage Phase**: `damage_application_system` → `DeathEvent`
-3. **Resolution Phase**: `death_detection_system` → `EnemyDeathEvent`/`PlayerDeathEvent` → XP/Respawn
+1. **Combat Start**: `CombatStartEvent` → `combat_start_system` → `combat_init_system` → Combat Components Added
+2. **Real-time Phase**: `attack_cooldown_system` → `player_attack_system`/`enemy_attack_system` → `AttackEvent`
+3. **Damage Phase**: `damage_application_system` → `DeathEvent`
+4. **Resolution Phase**: `death_detection_system` → `EnemyDeathEvent`/`PlayerDeathEvent` → XP/Respawn
+5. **Auto Retry**: Death System or UI Button → `CombatStartEvent` → Combat Restart
 
 ### Dependencies
 - **Bevy 0.16.1** - ECS game engine
@@ -81,6 +83,20 @@ Tests are organized by concern:
 - UI is completely separated from game logic
 - Level components are disambiguated: `management_stats::Level` vs `upgradeable_stats::UpgradeLevel`
 - Upgrade system now properly separated: components in `/components/`, systems in `/systems/`
+
+## Event-Driven Architecture (2025-06-20 Update)
+
+### Combat Start System
+- **`CombatStartEvent`** - Unified event for all combat initiation
+- **`combat_start_system`** - Centralized combat state management
+- **Event Sources**: Dungeon button, manual retry button, auto retry system
+- **Benefits**: Eliminates direct state manipulation, ensures consistent combat initialization
+
+### Auto Retry System
+- **Immediate Response**: Auto retry button triggers combat start when pressed during game over
+- **Death-Time Auto Retry**: Automatic retry when enabled and player dies
+- **Event-Driven**: All retry mechanisms use `CombatStartEvent` for consistency
+- **UI Independence**: Game logic doesn't depend on UI state
 
 ## Development Guidelines
 

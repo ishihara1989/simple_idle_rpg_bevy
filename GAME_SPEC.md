@@ -33,6 +33,8 @@ Simple Idle RPG is a real-time idle RPG where players battle enemies continuousl
 - **タブインターフェース**: 戦闘タブ、転生タブ
 - **リアルタイム更新**: 全ステータスの自動更新
 - **完全自動化**: 戦闘、アップグレード、進行すべて自動
+- **イベント駆動オートリトライ**: ゲームオーバー状態でのリアルタイム反応
+- **統一された戦闘開始**: ボタン操作から自動リトライまで一貫したフロー
 
 ### 現在のゲームバランス (Current Game Balance)
 
@@ -139,9 +141,10 @@ EXP: 5.0 * 1.15^enemy_number
 
 ### プラグイン構成 (Plugin Structure)
 - **PlayerPlugin**: ゲーム状態初期化、プレイヤーセットアップ
-- **CombatPlugin**: 戦闘イベント、リアルタイム戦闘システム
+- **CombatPlugin**: 戦闘イベント、リアルタイム戦闘システム、戦闘開始管理
 - **StatsPlugin**: ステータス強化、同期システム
-- **UIPlugin**: ユーザーインターフェース管理、更新
+- **UIPlugin**: ユーザーインターフェース管理、更新、イベント発行
+- **BalanceCheckPlugin**: ヘッドレステスト、自動化設定管理
 
 ### コンポーネント設計 (Component Design)
 - **combat_stats.rs**: 一時的戦闘ステータス (CurrentHp, CombatAttack等)
@@ -184,5 +187,15 @@ EXP: 5.0 * 1.15^enemy_number
 
 ---
 
-**Last Updated**: 2025-06-19  
-**Implementation Status**: Core systems fully functional, expansion features planned
+## 最新の実装更新 (Latest Implementation Updates)
+
+### 2025-06-20: イベント駆動オートリトライシステム
+- **CombatStartEvent**: 全戦闘開始の統一イベント
+- **即応オートリトライ**: ゲームオーバー中のボタン操作で即座に戦闘開始
+- **責任分離**: UI・戦闘・死亡システム間の完全な疎結合
+- **戦闘開始の一元化**: ダンジョンボタン・手動/自動リトライが同一フロー
+
+---
+
+**Last Updated**: 2025-06-20  
+**Implementation Status**: Core systems and auto retry fully functional, event-driven architecture complete, expansion features planned
