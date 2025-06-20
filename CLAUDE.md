@@ -5,9 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Building and Running
-- `cargo run` - Build and run the game
+- `cargo run` - Build and run the game (normal mode with UI)
 - `cargo build` - Build the project
 - `cargo build --release` - Build optimized release version
+
+### Balance Testing (Headless Mode)
+- `cargo run -- --balance-check` - Run balance check mode (no UI, 60 seconds)
+- `cargo run -- --balance-check --duration 30` - Custom duration
+- `cargo run -- --balance-check --level 5 --hp-level 3` - Custom initial state
+- `cargo run -- --help` - Show all available command line options
 
 ### Testing
 - `cargo test` - Run all tests
@@ -21,12 +27,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a real-time idle RPG built with **Rust + Bevy ECS 0.16.1**. The architecture follows ECS (Entity Component System) principles with a plugin-based design.
 
 ### Plugin System
-The game is organized into 4 main plugins, each handling a specific domain:
+The game is organized into 5 main plugins, each handling a specific domain:
 
 - **PlayerPlugin** (`src/plugins/player.rs`) - Game state initialization and player setup
 - **CombatPlugin** (`src/plugins/combat.rs`) - Combat events and real-time battle systems  
 - **StatsPlugin** (`src/plugins/stats.rs`) - Stat upgrades and synchronization systems
 - **UIPlugin** (`src/plugins/ui.rs`) - User interface management and updates
+- **BalanceCheckPlugin** (`src/plugins/balance_check.rs`) - Headless balance testing mode
 
 ### Key Components Architecture
 
@@ -48,6 +55,7 @@ The game is organized into 4 main plugins, each handling a specific domain:
 ### Dependencies
 - **Bevy 0.16.1** - ECS game engine
 - **too_big_float** - Custom BigFloat library for handling large numbers in idle game progression
+- **clap** - Command line argument parsing for balance testing mode
 
 ## ECS Design Principles
 

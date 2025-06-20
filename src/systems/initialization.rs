@@ -1,33 +1,76 @@
 use bevy::prelude::*;
 use too_big_float::BigFloat;
 use crate::components::*;
+use crate::StartupConfig;
 // All components are now imported via crate::components::*
 
 // Initialize player with base management stats
-pub fn player_init_system(mut commands: Commands) {
+pub fn player_init_system(
+    mut commands: Commands,
+    config: Res<StartupConfig>,
+) {
     let base_hp = BigFloat::from(100.0);
     let base_attack = BigFloat::from(10.0);
     let base_defense = BigFloat::from(5.0);
     let base_speed = BigFloat::from(1.0);
     let base_cost = BigFloat::from(10.0);
 
-    // Create player entity with management stats
+    // Create player entity with management stats (using config values)
     commands.spawn((
         Player,
         BaseHp(base_hp.clone()),
         BaseAttack(base_attack.clone()),
         BaseDefense(base_defense.clone()),
         BaseSpeed(base_speed.clone()),
-        Experience(BigFloat::from(0.0)),
-        Level(1),
+        Experience(BigFloat::from(config.experience as f64)),
+        Level(config.level),
         RebirthPoints(BigFloat::from(0.0)),
     ));
 
-    // Create upgradeable stat entities using typed bundles
-    commands.spawn(UpgradeableHpBundle::new(base_hp, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableAttackBundle::new(base_attack, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableDefenseBundle::new(base_defense, base_cost.clone(), 1.15, 1.3));
-    commands.spawn(UpgradeableSpeedBundle::new(base_speed, base_cost, 1.15, 1.3));
+    // Create upgradeable stat entities using typed bundles with config values
+    commands.spawn((
+        UpgradeableHp,
+        Player,
+        CurrentValue(base_hp.clone()),
+        BaseValue(base_hp.clone()),
+        UpgradeLevel(config.hp_level),
+        UpgradeCost(base_cost.clone()),
+        UpgradeMultiplier(1.15),
+        CostMultiplier(1.3),
+    ));
+
+    commands.spawn((
+        UpgradeableAttack,
+        Player,
+        CurrentValue(base_attack.clone()),
+        BaseValue(base_attack.clone()),
+        UpgradeLevel(config.attack_level),
+        UpgradeCost(base_cost.clone()),
+        UpgradeMultiplier(1.15),
+        CostMultiplier(1.3),
+    ));
+
+    commands.spawn((
+        UpgradeableDefense,
+        Player,
+        CurrentValue(base_defense.clone()),
+        BaseValue(base_defense.clone()),
+        UpgradeLevel(config.defense_level),
+        UpgradeCost(base_cost.clone()),
+        UpgradeMultiplier(1.15),
+        CostMultiplier(1.3),
+    ));
+
+    commands.spawn((
+        UpgradeableSpeed,
+        Player,
+        CurrentValue(base_speed),
+        BaseValue(base_speed),
+        UpgradeLevel(config.speed_level),
+        UpgradeCost(base_cost),
+        UpgradeMultiplier(1.15),
+        CostMultiplier(1.3),
+    ));
 }
 
 // Initialize combat by copying management stats to combat stats

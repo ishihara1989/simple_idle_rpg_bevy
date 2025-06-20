@@ -1,11 +1,12 @@
-# Simple Idle RPG - Game Specification
+# Game Specification
 
-## 概要 (Overview)
+This document describes the gameplay mechanics, balance systems, and core features of Simple Idle RPG.
 
-放置系リアルタイムRPGゲーム。指数的に強くなっていく敵に対して徐々にアンロックされていく多様な強化要素で対抗する。
-クッキークリッカーやAntimatter Dimensionsなどのインクリメンタルゲームを参考にしたゲームバランス。
+## Game Overview
 
-**Core Philosophy**: 自動化が重要。基本的にリセットされて2回目に触るときは自動化されていてほしい。
+Simple Idle RPG is a real-time idle RPG where players battle enemies continuously, gain experience, and upgrade their stats to progress through increasingly difficult opponents. The game draws inspiration from incremental games like Cookie Clicker and Antimatter Dimensions.
+
+**Core Philosophy**: Automation is key. When players return to the game, systems should be automated and progressing without manual intervention.
 
 ## 現在の実装状況 (Current Implementation Status)
 

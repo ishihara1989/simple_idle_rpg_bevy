@@ -1,11 +1,27 @@
-# Simple Idle RPG - 現在の設計とリファクタリング課題
+# Architecture Guide
 
-## 1. 現在のアーキテクチャ概要
+This document describes the technical architecture and design principles of Simple Idle RPG.
 
-### 1.1 技術スタック
-- **ECSフレームワーク**: Bevy ECS 0.16.1
-- **数値計算**: `too_big_float` (BigFloat) - 大きな数値の計算に対応
-- **ゲームタイプ**: リアルタイム戦闘のIdle RPG
+## Overview
+
+Simple Idle RPG is built using **Rust + Bevy ECS 0.16.1** with a strict ECS (Entity Component System) architecture. The game follows a plugin-based design for modularity and maintainability.
+
+## Core Architecture
+
+### ECS Design Principles
+
+After recent refactoring, this codebase follows strict ECS principles:
+
+- **Single Responsibility**: Each system handles one specific aspect (e.g., `hp_sync_system` only syncs HP)
+- **Type Safety**: Marker components instead of string-based identification
+- **Small Systems**: Target 20-30 lines per system, max 50 lines
+- **Event-Driven**: Loose coupling between systems via Bevy events
+
+### Technology Stack
+- **ECS Framework**: Bevy ECS 0.16.1
+- **Large Numbers**: `too_big_float` (BigFloat) - For handling exponential growth in idle games
+- **CLI**: `clap` - Command line argument parsing for balance testing
+- **Game Type**: Real-time combat idle RPG
 
 ### 1.2 プロジェクト構造
 ```
